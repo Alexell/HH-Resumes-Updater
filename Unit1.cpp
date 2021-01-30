@@ -32,7 +32,6 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 	randomize();
 	int r = random(3);
 	UrlMkSetSessionOption(URLMON_OPTION_USERAGENT, UserAgent[r], strlen(UserAgent[r]), 0); //из библиотеки urlmon.lib
-	Temp = UserAgent[r];
 
 	//Подавление всплывающих ошибок браузера
 	Web->Silent = true;
@@ -90,7 +89,8 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 	if(Step == 0)
 	{
 		Web->Refresh();
-        Step = 1;
+		Step = 1;
+		return;
 	}
 
 	if(Step == 1)
@@ -106,7 +106,6 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 			TStringList * TempList = new TStringList();
 			TempList->Delimiter = L'>';
 			TempList->DelimitedText = Sheet->Text;
-			TempList->SaveToFile("test.html");
 
 			for(int i = 0; i < TempList->Count; i++)
 			{
@@ -118,6 +117,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 			{
 				StatusBar->Panels->Items[1]->Text = "Можно поднять "+IntToStr(count)+" резюме.";
 				Step = 2;
+				return;
 			}
 			else
 			{
@@ -125,6 +125,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 				MainTimer->Enabled = false;
 				Step = 0;
 				LongTimer->Enabled = true;
+				return;
 			}
 		}
 		else
@@ -133,8 +134,8 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 			Step = 0;
 			StartTimer->Enabled = true;
 			HelpLabel->Caption = "Возникла проблема с авторизацией на сайте.";
+			return;
 		}
-		return;
 	}
 
 	if(Step == 2)
@@ -142,6 +143,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
         StatusBar->Panels->Items[1]->Text = "Поднимаю резюме в поиске...";
 		UpdateResume();
 		Step = 0;
+		return;
 	}
 }
 //---------------------------------------------------------------------------
@@ -194,11 +196,12 @@ void TForm1::UpdateResume()
 							{
 								if(!wcode.Pos("button_disabled"))
 								{
-									pElem->click();
-									pElements->Release();
-									pElem->Release();
-									ppElem->Release();
-									return;
+									try
+									{
+										pElem->click();
+									}
+									catch(...){}
+									break;
 								}
 							}
 						}
