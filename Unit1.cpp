@@ -208,11 +208,7 @@ void TForm1::UpdateResume()
 					}
 				}
 			}
-			pElements->Release();
-			pElem->Release();
-			ppElem->Release();
 		}
-        HTMLDoc->Release();
 	}
 }
 //---------------------------------------------------------------------------------
