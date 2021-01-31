@@ -48,14 +48,9 @@ object Form1: TForm1
     Width = 434
     Height = 22
     DoubleBuffered = False
-    Panels = <
-      item
-        Width = 217
-      end
-      item
-        Width = 217
-      end>
+    Panels = <>
     ParentDoubleBuffered = False
+    SimplePanel = True
   end
   object StartTimer: TTimer
     Enabled = False

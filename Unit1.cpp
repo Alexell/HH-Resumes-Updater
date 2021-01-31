@@ -38,12 +38,12 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
 	//Сбрасываем старую сессию (не куки)
 	InternetSetOption(0, INTERNET_OPTION_END_BROWSER_SESSION, 0, 0); //из библиотеки wininet.lib
-
+	StatusBar->SimpleText = "Статус: открываю hh.ru ...";
 	Send = "https://hh.ru";
 	Navigate(Send);
 	StartTimer->Enabled = true;
 	HelpLabel->Caption = "Авторизуйтесь на сайте в этом браузере, после чего программа начнет работу.";
-	StatusBar->Panels->Items[0]->Text = "Статус: проверяю авторизацию...";
+	StatusBar->SimpleText = "Статус: проверяю авторизацию ...";
 }
 //---------------------------------------------------------------------------
 
@@ -59,16 +59,10 @@ void TForm1::Navigate(String URL)
 
 void __fastcall TForm1::StartTimerTimer(TObject *Sender)
 {
-
-	if(Web->LocationURL.Pos("login"))
-	{
-		StatusBar->Panels->Items[0]->Text = "Статус: жду авторизации...";
-	}
-
 	Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 	if(Sheet->Text.Pos("Мои резюме"))
 	{
-		StatusBar->Panels->Items[0]->Text = "Статус: авторизация успешна.";
+		StatusBar->SimpleText = "Статус: авторизация успешна. Открываю список резюме ...";
 		HelpLabel->Visible = false;
 		StartTimer->Enabled = false;
 		Send = "https://hh.ru/applicant/resumes?from=header_new";
@@ -78,8 +72,13 @@ void __fastcall TForm1::StartTimerTimer(TObject *Sender)
 	}
 	else
 	{
-		StatusBar->Panels->Items[0]->Text = "Статус: жду авторизации...";
+		StatusBar->SimpleText = "Статус: жду авторизации ...";
 		HelpLabel->Visible = true;
+	}
+
+	if(Web->LocationURL.Pos("login"))
+	{
+		StatusBar->SimpleText = "Статус: жду авторизации пользователя ...";
 	}
 }
 //---------------------------------------------------------------------------
@@ -95,14 +94,14 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 
 	if(Step == 1)
 	{
-		StatusBar->Panels->Items[0]->Text = "Статус: работаю...";
-
 		//Считаем кол-во резюме для поднятия
 		int count = 0;
 		Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 		if(Sheet->Text.Pos("Мои резюме"))
 		{
 			HelpLabel->Caption = "";
+			HelpLabel->Font->Color = clWindowText;
+			HelpLabel->Font->Style = TFontStyles() >> fsBold;
 			TStringList * TempList = new TStringList();
 			TempList->Delimiter = L'>';
 			TempList->DelimitedText = Sheet->Text;
@@ -115,13 +114,13 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 
 			if(count > 0)
 			{
-				StatusBar->Panels->Items[1]->Text = "Можно поднять "+IntToStr(count)+" резюме.";
+				StatusBar->SimpleText = "Статус: могу поднять "+IntToStr(count)+" резюме.";
 				Step = 2;
 				return;
 			}
 			else
 			{
-				StatusBar->Panels->Items[1]->Text = "Поднятие недоступно. Ожидаем...";
+				StatusBar->SimpleText = "Статус: поднятие недоступно. Ожидаем ...";
 				MainTimer->Enabled = false;
 				Step = 0;
 				LongTimer->Enabled = true;
@@ -132,7 +131,11 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 		{
 			MainTimer->Enabled = false;
 			Step = 0;
+			Send = "https://hh.ru/account/login";
+			Navigate(Send);
 			StartTimer->Enabled = true;
+			HelpLabel->Font->Style = TFontStyles() << fsBold;
+			HelpLabel->Font->Color = clRed;
 			HelpLabel->Caption = "Возникла проблема с авторизацией на сайте.";
 			return;
 		}
@@ -140,7 +143,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 
 	if(Step == 2)
 	{
-        StatusBar->Panels->Items[1]->Text = "Поднимаю резюме в поиске...";
+		StatusBar->SimpleText = "Статус: поднимаю резюме в поиске.";
 		UpdateResume();
 		Step = 0;
 		return;
