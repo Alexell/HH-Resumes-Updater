@@ -68,7 +68,7 @@ object Form1: TForm1
   end
   object LongTimer: TTimer
     Enabled = False
-    Interval = 1920000
+    Interval = 3600000
     OnTimer = LongTimerTimer
     Left = 392
     Top = 104

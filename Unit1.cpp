@@ -2,6 +2,8 @@
 
 #include <vcl.h>
 #pragma hdrstop
+
+#include <memory>
 #include "Mshtml.h"
 
 #include "Unit1.h"
@@ -11,8 +13,7 @@
 #pragma resource "*.dfm"
 TForm1 *Form1;
 
-TStringList * Sheet = new TStringList();
-UnicodeString Send, Temp, Temp2;
+UnicodeString Send;
 int Step = 0;
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
@@ -31,13 +32,13 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
 	randomize();
 	int r = random(3);
-	UrlMkSetSessionOption(URLMON_OPTION_USERAGENT, UserAgent[r], strlen(UserAgent[r]), 0); //из библиотеки urlmon.lib
+	UrlMkSetSessionOption(URLMON_OPTION_USERAGENT, UserAgent[r], strlen(UserAgent[r]), 0); //библиотека urlmon.lib
 
 	//Подавление всплывающих ошибок браузера
 	Web->Silent = true;
 
 	//Сбрасываем старую сессию (не куки)
-	InternetSetOption(0, INTERNET_OPTION_END_BROWSER_SESSION, 0, 0); //из библиотеки wininet.lib
+	InternetSetOption(0, INTERNET_OPTION_END_BROWSER_SESSION, 0, 0); //библиотека wininet.lib
 	StatusBar->SimpleText = "Статус: открываю hh.ru ...";
 	Send = "https://hh.ru";
 	Navigate(Send);
@@ -59,6 +60,7 @@ void TForm1::Navigate(String URL)
 
 void __fastcall TForm1::StartTimerTimer(TObject *Sender)
 {
+	std::unique_ptr<TStringList>Sheet(new TStringList());
 	Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 	if(Sheet->Text.Pos("Мои резюме"))
 	{
@@ -96,13 +98,15 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 	{
 		//Считаем кол-во резюме для поднятия
 		int count = 0;
+		std::unique_ptr<TStringList>Sheet(new TStringList());
 		Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 		if(Sheet->Text.Pos("Мои резюме"))
 		{
 			HelpLabel->Caption = "";
 			HelpLabel->Font->Color = clWindowText;
 			HelpLabel->Font->Style = TFontStyles() >> fsBold;
-			TStringList * TempList = new TStringList();
+
+			std::unique_ptr<TStringList>TempList(new TStringList());
 			TempList->Delimiter = L'>';
 			TempList->DelimitedText = Sheet->Text;
 
@@ -110,7 +114,6 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 			{
 				if(TempList->Strings[i].Pos("applicant-resumes-update-button") && !TempList->Strings[i].Pos("applicant-resumes-update-button_disabled") && !TempList->Strings[i+1].Pos("applicant-resumes-update-button_disabled")) count++;
 			}
-			delete TempList;
 
 			if(count > 0)
 			{
@@ -123,6 +126,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 				StatusBar->SimpleText = "Статус: поднятие недоступно. Ожидаем ...";
 				MainTimer->Enabled = false;
 				Step = 0;
+				ClearMemory();
 				LongTimer->Enabled = true;
 				return;
 			}
@@ -145,7 +149,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 	{
 		StatusBar->SimpleText = "Статус: поднимаю резюме в поиске.";
 		UpdateResume();
-		Step = 0;
+		Step = 1;
 		return;
 	}
 }
@@ -164,56 +168,73 @@ void TForm1::UpdateResume()
 {
 	if(Web->Document)
 	{
-		TComInterface<IHTMLDocument2> HTMLDoc; //из подключаемого "Mshtml.h"
+		IHTMLDocument2 *HTMLDoc = NULL; //include "Mshtml.h"
 		Web->Document->QueryInterface(IID_IHTMLDocument2, (LPVOID*)&HTMLDoc);
 		if(HTMLDoc)
 		{
 			WideString wtext, wcode;
-			TComInterface<IHTMLElementCollection> pElements;
-			IHTMLElement *pElem = NULL;
-			IHTMLElement *ppElem = NULL;
-			HTMLDoc->get_all(&pElements);
-			long numelems;
-			HRESULT hres = pElements->get_length(&numelems);
-
-			if (hres == S_OK)
+			IHTMLElementCollection *pElements = NULL;
+			if(SUCCEEDED(HTMLDoc->get_all(&pElements)) && pElements)
 			{
-				for (int i=0; i < numelems; i++)
+				IHTMLElement *pElem = NULL;
+				IHTMLElement *ppElem = NULL;
+				IDispatch* pDisp = NULL;
+				long numelems;
+				HRESULT hres = pElements->get_length(&numelems);
+				if (hres == S_OK)
 				{
-					VARIANT varIndex;
-					varIndex.vt = VT_UINT;
-					varIndex.lVal = i;
-					VARIANT var2;
-					VariantInit( &var2 );
-					IDispatch* pDisp;
-
-					pElements->item(varIndex, var2, &pDisp);
-					if (SUCCEEDED(pDisp -> QueryInterface (IID_IHTMLElement, (LPVOID*)&pElem)) && pElem)
+					for (int i=0; i < numelems; i++)
 					{
-						pElem->get_innerText(&wtext);
-						if (wtext == "Поднять в поиске")
+						VARIANT varIndex;
+						varIndex.vt = VT_UINT;
+						varIndex.lVal = i;
+						VARIANT var2;
+						VariantInit( &var2 );
+
+						pElements->item(varIndex, var2, &pDisp);
+						if (SUCCEEDED(pDisp -> QueryInterface (IID_IHTMLElement, (LPVOID*)&pElem)) && pElem)
 						{
-							pElem->get_parentElement(&ppElem);
-							ppElem->get_outerHTML(&wcode);
-							if(wcode.Pos("<span class") == 1)
+							pElem->get_innerText(&wtext);
+							if (wtext == "Поднять в поиске")
 							{
-								if(!wcode.Pos("button_disabled"))
+								pElem->get_parentElement(&ppElem);
+								ppElem->get_outerHTML(&wcode);
+								ppElem->Release();
+								if(wcode.Pos("<span class") == 1)
 								{
-									try
+									if(!wcode.Pos("button_disabled"))
 									{
 										pElem->click();
+										pElem->Release();
+										pDisp->Release();
+										break;
 									}
-									catch(...){}
-									break;
 								}
 							}
+							pElem->Release();
 						}
+						pDisp->Release();
 					}
+					numelems = 0;
 				}
+				pElements->Release();
 			}
 		}
+		HTMLDoc->Release();
 	}
 }
 //---------------------------------------------------------------------------------
 
-
+void TForm1::ClearMemory()
+{
+	try
+	{
+		THandle MainHandle;
+		HANDLE ProcessHandle, ThreadHandle;
+		DWORD ProcessID = GetCurrentProcessId();
+		ProcessHandle = OpenProcess(PROCESS_ALL_ACCESS,false,ProcessID);
+		SetProcessWorkingSetSize(ProcessHandle, DWORD(-1), DWORD(-1));
+		CloseHandle(ProcessHandle);
+	}
+    catch(...){}
+}

@@ -29,7 +29,8 @@ __published:	// IDE-managed Components
 private:	// User declarations
 public:		// User declarations
 	void Navigate(String URL);
-    void UpdateResume();
+	void UpdateResume();
+    void ClearMemory();
 	__fastcall TForm1(TComponent* Owner);
 };
 //---------------------------------------------------------------------------
