@@ -98,7 +98,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 	{
 		//Считаем кол-во резюме для поднятия
 		int count = 0;
-		std::unique_ptr<TStringList>Sheet(new TStringList());
+		std::unique_ptr<TStringList>Sheet(new TStringList()); //#include <memory>
 		Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 		if(Sheet->Text.Pos("Мои резюме"))
 		{
@@ -168,11 +168,10 @@ void TForm1::UpdateResume()
 {
 	if(Web->Document)
 	{
-		IHTMLDocument2 *HTMLDoc = NULL; //include "Mshtml.h"
+		IHTMLDocument2 *HTMLDoc = NULL; //#include "Mshtml.h"
 		Web->Document->QueryInterface(IID_IHTMLDocument2, (LPVOID*)&HTMLDoc);
 		if(HTMLDoc)
 		{
-			WideString wtext, wcode;
 			IHTMLElementCollection *pElements = NULL;
 			if(SUCCEEDED(HTMLDoc->get_all(&pElements)) && pElements)
 			{
@@ -191,34 +190,35 @@ void TForm1::UpdateResume()
 						VARIANT var2;
 						VariantInit( &var2 );
 
-						pElements->item(varIndex, var2, &pDisp);
-						if (SUCCEEDED(pDisp -> QueryInterface (IID_IHTMLElement, (LPVOID*)&pElem)) && pElem)
+						if(SUCCEEDED(pElements->item(varIndex, var2, &pDisp)) && pDisp)
 						{
-							pElem->get_innerText(&wtext);
-							if (wtext == "Поднять в поиске")
+							if (SUCCEEDED(pDisp -> QueryInterface (IID_IHTMLElement, (LPVOID*)&pElem)) && pElem)
 							{
-								pElem->get_parentElement(&ppElem);
-								ppElem->get_outerHTML(&wcode);
-								ppElem->Release();
-								if(wcode.Pos("<span class") == 1)
+								WideString wtext;
+								pElem->get_innerText(&wtext);
+								if (wtext == "Поднять в поиске")
 								{
-									if(!wcode.Pos("button_disabled"))
+									WideString wcode;
+									pElem->get_parentElement(&ppElem);
+									ppElem->get_outerHTML(&wcode);
+									ppElem->Release();
+									if(wcode.Pos("<span class") == 1)
 									{
-										pElem->click();
-										pElem->Release();
-										pDisp->Release();
-										break;
+										if(!wcode.Pos("button_disabled"))
+										{
+											pElem->click();
+											break;
+										}
 									}
 								}
+								pElem->Release();
 							}
-							pElem->Release();
+							pDisp->Release();
 						}
-						pDisp->Release();
 					}
-					numelems = 0;
 				}
-				pElements->Release();
 			}
+			pElements->Release();
 		}
 		HTMLDoc->Release();
 	}
