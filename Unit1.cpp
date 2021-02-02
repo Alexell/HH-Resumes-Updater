@@ -21,6 +21,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 {
 	//Настройки
 	Form1->Caption = Application->Title;
+	Tray->Hint = Application->Title;
 
 	//Подмена UserAgent
 	char UserAgent[3][200] =
@@ -238,3 +239,22 @@ void TForm1::ClearMemory()
 	}
     catch(...){}
 }
+void __fastcall TForm1::ApplicationEventsMinimize(TObject *Sender)
+{
+	ShowWindow(Handle,SW_HIDE);
+	ShowWindow(Application->Handle,SW_HIDE);
+	Application->Minimize();
+	Tray->Visible = true;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::TrayClick(TObject *Sender)
+{
+	Tray->Visible = false;
+	Application->Restore();
+	ShowWindow(Application->Handle,SW_SHOW);
+	ShowWindow(Handle,SW_SHOW);
+	Form1->FormStyle = fsStayOnTop;
+}
+//---------------------------------------------------------------------------
+
