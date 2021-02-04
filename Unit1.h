@@ -17,7 +17,6 @@
 class TForm1 : public TForm
 {
 __published:	// IDE-managed Components
-	TCppWebBrowser *Web;
 	TLabel *HelpLabel;
 	TStatusBar *StatusBar;
 	TTimer *StartTimer;
@@ -35,7 +34,9 @@ private:	// User declarations
 public:		// User declarations
 	void Navigate(String URL);
 	void UpdateResume();
-    void ClearMemory();
+	void ClearMemory();
+	void CreateWeb(bool show = false);
+	void DestroyWeb();
 	__fastcall TForm1(TComponent* Owner);
 };
 //---------------------------------------------------------------------------

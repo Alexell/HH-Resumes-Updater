@@ -13,7 +13,7 @@
 #pragma resource "*.dfm"
 TForm1 *Form1;
 
-UnicodeString Send;
+TCppWebBrowser *Web = NULL;
 int Step = 0;
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
@@ -23,26 +23,10 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 	Form1->Caption = Application->Title;
 	Tray->Hint = Application->Title;
 
-	//Подмена UserAgent
-	char UserAgent[3][200] =
-	{
-	"Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1",
-	"Mozilla/5.0 (iPhone; CPU iPhone OS 13_0 like Mac OS X) AppleWebKit/605.0.1 (KHTML, like Gecko) Version/13.0 Mobile/17A577 Safari/604.1",
-	"Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.2 Mobile/15E148 Safari/604.1"
-	};
+	CreateWeb(true);
 
-	randomize();
-	int r = random(3);
-	UrlMkSetSessionOption(URLMON_OPTION_USERAGENT, UserAgent[r], strlen(UserAgent[r]), 0); //библиотека urlmon.lib
-
-	//Подавление всплывающих ошибок браузера
-	Web->Silent = true;
-
-	//Сбрасываем старую сессию (не куки)
-	InternetSetOption(0, INTERNET_OPTION_END_BROWSER_SESSION, 0, 0); //библиотека wininet.lib
 	StatusBar->SimpleText = "Статус: открываю hh.ru ...";
-	Send = "https://hh.ru";
-	Navigate(Send);
+	Navigate("https://hh.ru");
 	StartTimer->Enabled = true;
 	HelpLabel->Caption = "Авторизуйтесь на сайте в этом браузере, после чего программа начнет работу.";
 	StatusBar->SimpleText = "Статус: проверяю авторизацию ...";
@@ -61,15 +45,14 @@ void TForm1::Navigate(String URL)
 
 void __fastcall TForm1::StartTimerTimer(TObject *Sender)
 {
-	std::unique_ptr<TStringList>Sheet(new TStringList());
-	Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
+	std::auto_ptr<TStringList> Sheet(new TStringList()); //#include <memory>
+	Sheet->Text = Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 	if(Sheet->Text.Pos("Мои резюме"))
 	{
 		StatusBar->SimpleText = "Статус: авторизация успешна. Открываю список резюме ...";
 		HelpLabel->Visible = false;
 		StartTimer->Enabled = false;
-		Send = "https://hh.ru/applicant/resumes?from=header_new";
-		Navigate(Send);
+		Navigate("https://hh.ru/applicant/resumes?from=header_new");
 		Step = 1;
 		MainTimer->Enabled = true;
 	}
@@ -90,7 +73,8 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 {
 	if(Step == 0)
 	{
-		Web->Refresh();
+		CreateWeb();
+		Navigate("https://hh.ru/applicant/resumes?from=header_new");
 		Step = 1;
 		return;
 	}
@@ -99,18 +83,17 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 	{
 		//Считаем кол-во резюме для поднятия
 		int count = 0;
-		std::unique_ptr<TStringList>Sheet(new TStringList()); //#include <memory>
-		Sheet->Text=Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
+		std::auto_ptr<TStringList> Sheet(new TStringList());
+		Sheet->Text = Web->OleObject.OlePropertyGet("document").OlePropertyGet("body").OlePropertyGet("innerHTML");
 		if(Sheet->Text.Pos("Мои резюме"))
 		{
 			HelpLabel->Caption = "";
 			HelpLabel->Font->Color = clWindowText;
 			HelpLabel->Font->Style = TFontStyles() >> fsBold;
 
-			std::unique_ptr<TStringList>TempList(new TStringList());
+			std::auto_ptr<TStringList> TempList(new TStringList());
 			TempList->Delimiter = L'>';
 			TempList->DelimitedText = Sheet->Text;
-
 			for(int i = 0; i < TempList->Count; i++)
 			{
 				if(TempList->Strings[i].Pos("applicant-resumes-update-button") && !TempList->Strings[i].Pos("applicant-resumes-update-button_disabled") && !TempList->Strings[i+1].Pos("applicant-resumes-update-button_disabled")) count++;
@@ -127,7 +110,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 				StatusBar->SimpleText = "Статус: поднятие недоступно. Ожидаем ...";
 				MainTimer->Enabled = false;
 				Step = 0;
-				ClearMemory();
+				DestroyWeb();
 				LongTimer->Enabled = true;
 				return;
 			}
@@ -136,9 +119,11 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 		{
 			MainTimer->Enabled = false;
 			Step = 0;
-			Send = "https://hh.ru/account/login";
-			Navigate(Send);
+			Navigate("https://hh.ru/account/login");
 			StartTimer->Enabled = true;
+			Form1->Height = 676;
+			HelpLabel->Top = 606;
+            Web->ClientHeight = 600;
 			HelpLabel->Font->Style = TFontStyles() << fsBold;
 			HelpLabel->Font->Color = clRed;
 			HelpLabel->Caption = "Возникла проблема с авторизацией на сайте.";
@@ -239,6 +224,8 @@ void TForm1::ClearMemory()
 	}
     catch(...){}
 }
+//---------------------------------------------------------------------------
+
 void __fastcall TForm1::ApplicationEventsMinimize(TObject *Sender)
 {
 	ShowWindow(Handle,SW_HIDE);
@@ -255,6 +242,39 @@ void __fastcall TForm1::TrayClick(TObject *Sender)
 	ShowWindow(Application->Handle,SW_SHOW);
 	ShowWindow(Handle,SW_SHOW);
 	Form1->FormStyle = fsStayOnTop;
+    Form1->FormStyle = fsNormal;
 }
 //---------------------------------------------------------------------------
 
+void TForm1::CreateWeb(bool show)
+{
+	Web = new TCppWebBrowser(Form1);
+	Form1->InsertControl(Web);
+	Web->Align = alTop;
+	Web->ClientHeight = 0;
+
+	//Меняем UserAgent
+	char *ua = new char[140];
+	strcpy(ua,AnsiString("Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.2 Mobile/15E148 Safari/604.1").c_str());
+	UrlMkSetSessionOption(URLMON_OPTION_USERAGENT, ua, strlen(ua), 0); //библиотека urlmon.lib
+	delete []ua;
+
+	Web->Silent = true; //подавление ошибок сценариев
+
+	if (show)
+	{
+		Form1->Height = 676;
+		HelpLabel->Top = 606;
+		Web->ClientHeight = 600;
+	}
+}
+//---------------------------------------------------------------------------
+
+void TForm1::DestroyWeb()
+{
+	FreeAndNil(&Web);
+	ClearMemory();
+	HelpLabel->Top = 5;
+	Form1->Height = 75;
+}
+//---------------------------------------------------------------------------
