@@ -15,6 +15,7 @@ TForm1 *Form1;
 
 TCppWebBrowser *Web = NULL;
 int Step = 0;
+String LastTime = "";
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
@@ -103,11 +104,16 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 			{
 				StatusBar->SimpleText = "Статус: могу поднять "+IntToStr(count)+" резюме.";
 				Step = 2;
+				if (count == 1) LastTime = Now().FormatString("hh:nn");
 				return;
 			}
 			else
 			{
-				StatusBar->SimpleText = "Статус: поднятие недоступно. Ожидаем ...";
+				if (LastTime == "")
+					StatusBar->SimpleText = "Статус: поднятие недоступно. Ожидаем ...";
+				else
+					StatusBar->SimpleText = "Статус: резюме подняты в "+LastTime+". Ожидаем ...";
+
 				MainTimer->Enabled = false;
 				Step = 0;
 				DestroyWeb();
@@ -119,6 +125,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 		{
 			MainTimer->Enabled = false;
 			Step = 0;
+			LastTime = "";
 			Navigate("https://hh.ru/account/login");
 			StartTimer->Enabled = true;
 			Form1->Height = 676;
