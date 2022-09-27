@@ -36,6 +36,14 @@ object Form1: TForm1
     ParentDoubleBuffered = False
     SimplePanel = True
   end
+  object Web: TEdgeBrowser
+    Left = 384
+    Top = 5
+    Width = 50
+    Height = 33
+    TabOrder = 1
+    OnExecuteScript = WebExecuteScript
+  end
   object StartTimer: TTimer
     Enabled = False
     Interval = 3000
