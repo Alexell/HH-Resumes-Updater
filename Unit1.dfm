@@ -6,23 +6,21 @@ object MainForm: TMainForm
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'MainForm'
-  ClientHeight = 46
-  ClientWidth = 434
+  ClientHeight = 45
+  ClientWidth = 430
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
   Position = poScreenCenter
   Visible = True
-  PixelsPerInch = 96
   TextHeight = 13
   object HelpLabel: TLabel
     Left = 8
     Top = 5
-    Width = 411
+    Width = 414
     Height = 13
     Caption = 
       #1040#1074#1090#1086#1088#1080#1079#1091#1081#1090#1077#1089#1100' '#1085#1072' '#1089#1072#1081#1090#1077' '#1074' '#1084#1080#1085#1080'-'#1073#1088#1072#1091#1079#1077#1088#1077', '#1087#1086#1089#1083#1077' '#1095#1077#1075#1086' '#1087#1088#1086#1075#1088#1072#1084#1084#1072' '#1085#1072#1095 +
@@ -30,8 +28,8 @@ object MainForm: TMainForm
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 24
-    Width = 434
+    Top = 23
+    Width = 430
     Height = 22
     DoubleBuffered = False
     Panels = <>
@@ -44,6 +42,7 @@ object MainForm: TMainForm
     Width = 50
     Height = 33
     TabOrder = 1
+    UserDataFolder = '%LOCALAPPDATA%\bds.exe.WebView2'
     OnExecuteScript = WebExecuteScript
   end
   object StartTimer: TTimer

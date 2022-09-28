@@ -14,8 +14,8 @@
 #include <Vcl.Menus.hpp>
 #include <Vcl.AppEvnts.hpp>
 #include <Vcl.Edge.hpp>
-#include <WebView2.hpp>
 #include <Winapi.ActiveX.hpp>
+#include <Winapi.WebView2.hpp>
 //---------------------------------------------------------------------------
 class TMainForm : public TForm
 {

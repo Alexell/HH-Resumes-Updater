@@ -139,7 +139,7 @@ void __fastcall TMainForm::TrayClick(TObject *Sender)
 void TMainForm::ShowWeb()
 {
 	Web->Align = alTop;
-	MainForm->Height = 676;
+	MainForm->Height = 685;
 	HelpLabel->Top = 606;
 	Web->ClientHeight = 600;
 	Web->Visible = true;
@@ -187,7 +187,7 @@ void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT 
 				LastTime = "";
 				ShowWeb();
 				StartTimer->Enabled = true;
-				MainForm->Height = 676;
+				MainForm->Height = 685;
 				HelpLabel->Top = 606;
 				Web->ClientHeight = 600;
 				HelpLabel->Font->Style = TFontStyles() << fsBold;
