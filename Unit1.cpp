@@ -10,28 +10,36 @@
 #pragma package(smart_init)
 #pragma link "SHDocVw_OCX"
 #pragma resource "*.dfm"
-TForm1 *Form1;
+TMainForm *MainForm;
 
 int Step = 0;
 String LastTime = "";
 //---------------------------------------------------------------------------
-__fastcall TForm1::TForm1(TComponent* Owner)
+__fastcall TMainForm::TMainForm(TComponent* Owner)
 	: TForm(Owner)
 {
 	//Настройки
-	Form1->Caption = Application->Title;
+	MainForm->Caption = Application->Title;
 	Tray->Hint = Application->Title;
-    ShowWeb();
+}
+//---------------------------------------------------------------------------
+
+void TMainForm::OneStart()
+{
+
+    MainForm->AlphaBlend = false;
+	ShowWeb();
+    MainForm->Position = poScreenCenter;
 
 	StatusBar->SimpleText = "Статус: открываю hh.ru ...";
-	Navigate("https://hh.ru");
+	Navigate(Domain+"locale?language=RU");
 	StartTimer->Enabled = true;
 	HelpLabel->Caption = "Авторизуйтесь на сайте в этом браузере, после чего программа начнет работу.";
 	StatusBar->SimpleText = "Статус: проверяю авторизацию ...";
 }
 //---------------------------------------------------------------------------
 
-void TForm1::Navigate(String URL)
+void TMainForm::Navigate(String URL)
 {
 	try
 	{
@@ -41,7 +49,7 @@ void TForm1::Navigate(String URL)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TForm1::StartTimerTimer(TObject *Sender)
+void __fastcall TMainForm::StartTimerTimer(TObject *Sender)
 {
 	Web->ExecuteScript("function check_auth() { let link = document.querySelectorAll('.supernova-link'); link = Array.from( link ).filter( e => (/Мои резюме/i).test( e.textContent ) ); return(link.length); } check_auth();");
 	if(Web->LocationURL.Pos("login"))
@@ -51,15 +59,17 @@ void __fastcall TForm1::StartTimerTimer(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TForm1::MainTimerTimer(TObject *Sender)
+void __fastcall TMainForm::MainTimerTimer(TObject *Sender)
 {
+	// переход в "Мои резюме"
 	if(Step == 0)
 	{
-		Navigate("https://hh.ru/applicant/resumes?from=header_new");
+		Navigate(Domain+"applicant/resumes");
 		Step = 1;
 		return;
 	}
 
+	// проверка авторизации
 	if(Step == 1)
 	{
 		Web->ExecuteScript("function check_auth() { let link = document.querySelectorAll('.supernova-link'); link = Array.from( link ).filter( e => (/Мои резюме/i).test( e.textContent ) ); return(link.length); } check_auth();");
@@ -68,14 +78,14 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 
 	if(Step == 2)
 	{
-		//Считаем кол-во резюме для поднятия
+		//Считаем кол-во доступных резюме для поднятия
 		Web->ExecuteScript("function check_resumes_col() { let link = document.querySelectorAll('.bloko-link'); link = Array.from( link ).filter( e => (/Поднять в поиске/i).test( e.textContent ) ); return(link.length); } check_resumes_col();");
 		return;
 	}
 
 	if(Step == 3)
 	{
-        // поднимаем резюме в поиске
+		// поднимаем резюме в поиске
 		StatusBar->SimpleText = "Статус: поднимаю резюме в поиске.";
 		Web->ExecuteScript("function update_resumes() { let link = document.querySelectorAll('.bloko-link'); link = Array.from( link ).filter( e => (/Поднять в поиске/i).test( e.textContent ) ); link.forEach((el) => { el.click(); }); } update_resumes();");
 		return;
@@ -83,7 +93,7 @@ void __fastcall TForm1::MainTimerTimer(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TForm1::LongTimerTimer(TObject *Sender)
+void __fastcall TMainForm::LongTimerTimer(TObject *Sender)
 {
 	LongTimer->Enabled = false;
 	Step = 0;
@@ -91,7 +101,7 @@ void __fastcall TForm1::LongTimerTimer(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void TForm1::ClearMemory()
+void TMainForm::ClearMemory()
 {
 	try
 	{
@@ -106,7 +116,7 @@ void TForm1::ClearMemory()
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TForm1::ApplicationEventsMinimize(TObject *Sender)
+void __fastcall TMainForm::ApplicationEventsMinimize(TObject *Sender)
 {
 	ShowWindow(Handle,SW_HIDE);
 	ShowWindow(Application->Handle,SW_HIDE);
@@ -115,38 +125,38 @@ void __fastcall TForm1::ApplicationEventsMinimize(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TForm1::TrayClick(TObject *Sender)
+void __fastcall TMainForm::TrayClick(TObject *Sender)
 {
 	Tray->Visible = false;
 	Application->Restore();
 	ShowWindow(Application->Handle,SW_SHOW);
 	ShowWindow(Handle,SW_SHOW);
-	Form1->FormStyle = fsStayOnTop;
-    Form1->FormStyle = fsNormal;
+	MainForm->FormStyle = fsStayOnTop;
+	MainForm->FormStyle = fsNormal;
 }
 //---------------------------------------------------------------------------
 
-void TForm1::ShowWeb()
+void TMainForm::ShowWeb()
 {
 	Web->Align = alTop;
-	Form1->Height = 676;
+	MainForm->Height = 676;
 	HelpLabel->Top = 606;
 	Web->ClientHeight = 600;
 	Web->Visible = true;
 }
 //---------------------------------------------------------------------------
 
-void TForm1::HideWeb()
+void TMainForm::HideWeb()
 {
 	Web->Visible = false;
 	HelpLabel->Top = 5;
-	Form1->Height = 75;
+	MainForm->Height = 75;
 	Web->Navigate(L"edge://");
 	ClearMemory();
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TForm1::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT AResult,
+void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT AResult,
 		  const UnicodeString AResultObjectAsJson)
 {
 	if (AResultObjectAsJson != 'null') {
@@ -177,7 +187,7 @@ void __fastcall TForm1::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT ARe
 				LastTime = "";
 				ShowWeb();
 				StartTimer->Enabled = true;
-				Form1->Height = 676;
+				MainForm->Height = 676;
 				HelpLabel->Top = 606;
 				Web->ClientHeight = 600;
 				HelpLabel->Font->Style = TFontStyles() << fsBold;
@@ -215,4 +225,3 @@ void __fastcall TForm1::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT ARe
 	}
 }
 //---------------------------------------------------------------------------
-

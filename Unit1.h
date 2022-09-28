@@ -17,7 +17,7 @@
 #include <WebView2.hpp>
 #include <Winapi.ActiveX.hpp>
 //---------------------------------------------------------------------------
-class TForm1 : public TForm
+class TMainForm : public TForm
 {
 __published:	// IDE-managed Components
 	TLabel *HelpLabel;
@@ -42,9 +42,11 @@ public:		// User declarations
 	void ClearMemory();
 	void ShowWeb();
 	void HideWeb();
-	__fastcall TForm1(TComponent* Owner);
+    void OneStart();
+	String Domain;
+	__fastcall TMainForm(TComponent* Owner);
 };
 //---------------------------------------------------------------------------
-extern PACKAGE TForm1 *Form1;
+extern PACKAGE TMainForm *MainForm;
 //---------------------------------------------------------------------------
 #endif

@@ -1,9 +1,11 @@
-object Form1: TForm1
+object MainForm: TMainForm
   Left = 0
   Top = 0
+  AlphaBlend = True
+  AlphaBlendValue = 0
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  Caption = 'Form1'
+  Caption = 'MainForm'
   ClientHeight = 46
   ClientWidth = 434
   Color = clBtnFace
