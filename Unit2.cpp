@@ -6,6 +6,7 @@
 #include "Unit1.h"
 #include "Unit2.h"
 #include "IniFiles.hpp"
+#include "Registry.hpp"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
@@ -25,7 +26,9 @@ __fastcall TSettingsForm::TSettingsForm(TComponent* Owner)
 	Settings = new TIniFile(ExtractFilePath(Application->ExeName)+"settings.ini");
 	if (Settings->ReadBool("Main","Started",false) == true) {
 		MainForm->Domain = SelectDomain(Settings->ReadInteger("Main","CountryIndex",0));
-		MainForm->OneStart();
+		bool minimized = false;
+		if (Settings->ReadBool("Main","AutoMinimize",false) == true) minimized = true;
+		MainForm->OneStart(minimized);
 		SettingsForm->Close();
 	}
 	else
@@ -38,8 +41,23 @@ void __fastcall TSettingsForm::SaveButtonClick(TObject *Sender)
 	Settings = new TIniFile(ExtractFilePath(Application->ExeName)+"settings.ini");
 	Settings->WriteBool("Main","Started",true);
 	Settings->WriteInteger("Main","CountryIndex",CBox->ItemIndex);
+	Settings->WriteBool("Main", "AutoRun", AutorunBox->Checked);
+	Settings->WriteBool("Main", "AutoMinimize", MinimizeBox->Checked);
+	if (AutorunBox->Checked == true) {
+		TRegistry *reg = new TRegistry();
+		reg->RootKey=HKEY_CURRENT_USER;
+		reg->OpenKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run",true);
+		reg->WriteString("HH Resumes Updater",Application->ExeName);
+		reg->CloseKey();
+	} else {
+		TRegistry *reg = new TRegistry();
+		reg->RootKey=HKEY_CURRENT_USER;
+		reg->OpenKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run",true);
+		reg->DeleteValue("HH Resumes Updater");
+		reg->CloseKey();
+	}
 	MainForm->Domain = SelectDomain(CBox->ItemIndex);
-	MainForm->OneStart();
+	MainForm->OneStart(false);
 	SettingsForm->Close();
 }
 //---------------------------------------------------------------------------
@@ -59,3 +77,12 @@ String TSettingsForm::SelectDomain(int index)
 	return dm;
 }
 //---------------------------------------------------------------------------
+void __fastcall TSettingsForm::FormShow(TObject *Sender)
+{
+	Settings = new TIniFile(ExtractFilePath(Application->ExeName)+"settings.ini");
+	CBox->ItemIndex = Settings->ReadInteger("Main","CountryIndex",0);
+	AutorunBox->Checked = Settings->ReadBool("Main","AutoRun",0);
+	MinimizeBox->Checked = Settings->ReadBool("Main","AutoMinimize",0);
+}
+//---------------------------------------------------------------------------
+

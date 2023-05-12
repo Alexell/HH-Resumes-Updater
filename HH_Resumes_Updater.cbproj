@@ -123,7 +123,7 @@
         <BCC_UseClassicCompiler>false</BCC_UseClassicCompiler>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1049</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=2.0.0.0;InternalName=HH Resumes Updater;LegalCopyright=Alexell;LegalTrademarks=;OriginalFilename=HH_Resumes_Updater.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=2.0.1.0;InternalName=HH Resumes Updater;LegalCopyright=Alexell;LegalTrademarks=;OriginalFilename=HH_Resumes_Updater.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.0.1;Comments=</VerInfo_Keys>
         <Icon_MainIcon>HH_Resumes_Updater_Icon.ico</Icon_MainIcon>
         <UWP_CppLogo44>hh-44.png</UWP_CppLogo44>
         <UWP_CppLogo150>hh-150.png</UWP_CppLogo150>
@@ -131,6 +131,7 @@
         <DynamicRTL>false</DynamicRTL>
         <LinkPackageStatics>rtl.lib;vcl.lib;bcbie.lib;vclie.lib;vcledge.lib</LinkPackageStatics>
         <VerInfo_MajorVer>2</VerInfo_MajorVer>
+        <VerInfo_Release>1</VerInfo_Release>
     </PropertyGroup>
     <ItemGroup>
         <LibFiles Include="C:\Program Files (x86)\Embarcadero\Studio\21.0\lib\win32\release\psdk\urlmon.lib" Condition="'$(Platform)'=='Win32'">

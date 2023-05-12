@@ -6,21 +6,22 @@ object MainForm: TMainForm
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'MainForm'
-  ClientHeight = 45
-  ClientWidth = 430
+  ClientHeight = 42
+  ClientWidth = 418
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  Menu = MainMenu
   Position = poScreenCenter
   Visible = True
   TextHeight = 13
   object HelpLabel: TLabel
     Left = 8
     Top = 5
-    Width = 414
+    Width = 411
     Height = 13
     Caption = 
       #1040#1074#1090#1086#1088#1080#1079#1091#1081#1090#1077#1089#1100' '#1085#1072' '#1089#1072#1081#1090#1077' '#1074' '#1084#1080#1085#1080'-'#1073#1088#1072#1091#1079#1077#1088#1077', '#1087#1086#1089#1083#1077' '#1095#1077#1075#1086' '#1087#1088#1086#1075#1088#1072#1084#1084#1072' '#1085#1072#1095 +
@@ -28,8 +29,8 @@ object MainForm: TMainForm
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 23
-    Width = 430
+    Top = 20
+    Width = 418
     Height = 22
     DoubleBuffered = False
     Panels = <>
@@ -11713,5 +11714,12 @@ object MainForm: TMainForm
   object ApplicationEvents: TApplicationEvents
     OnMinimize = ApplicationEventsMinimize
     Left = 240
+  end
+  object MainMenu: TMainMenu
+    Left = 296
+    object N1: TMenuItem
+      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+      OnClick = N1Click
+    end
   end
 end

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Unit1.h"
+#include "Unit2.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma link "SHDocVw_OCX"
@@ -24,10 +25,9 @@ __fastcall TMainForm::TMainForm(TComponent* Owner)
 }
 //---------------------------------------------------------------------------
 
-void TMainForm::OneStart()
+void TMainForm::OneStart(bool minimized)
 {
-
-    MainForm->AlphaBlend = false;
+	MainForm->AlphaBlend = false;
 	ShowWeb();
     MainForm->Position = poScreenCenter;
 
@@ -36,6 +36,11 @@ void TMainForm::OneStart()
 	StartTimer->Enabled = true;
 	HelpLabel->Caption = "Авторизуйтесь на сайте в этом браузере, после чего программа начнет работу.";
 	StatusBar->SimpleText = "Статус: проверяю авторизацию ...";
+	if (minimized == true) {
+		Application->Minimize();
+		ShowWindow(Handle,SW_HIDE);
+		Tray->Visible = true;
+	}
 }
 //---------------------------------------------------------------------------
 
@@ -118,9 +123,8 @@ void TMainForm::ClearMemory()
 
 void __fastcall TMainForm::ApplicationEventsMinimize(TObject *Sender)
 {
-	ShowWindow(Handle,SW_HIDE);
-	ShowWindow(Application->Handle,SW_HIDE);
 	Application->Minimize();
+	ShowWindow(Handle,SW_HIDE);
 	Tray->Visible = true;
 }
 //---------------------------------------------------------------------------
@@ -129,7 +133,6 @@ void __fastcall TMainForm::TrayClick(TObject *Sender)
 {
 	Tray->Visible = false;
 	Application->Restore();
-	ShowWindow(Application->Handle,SW_SHOW);
 	ShowWindow(Handle,SW_SHOW);
 	MainForm->FormStyle = fsStayOnTop;
 	MainForm->FormStyle = fsNormal;
@@ -225,3 +228,9 @@ void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT 
 	}
 }
 //---------------------------------------------------------------------------
+void __fastcall TMainForm::N1Click(TObject *Sender)
+{
+    SettingsForm->Show();
+}
+//---------------------------------------------------------------------------
+

@@ -13,8 +13,12 @@ class TSettingsForm : public TForm
 __published:	// IDE-managed Components
 	TComboBox *CBox;
 	TButton *SaveButton;
-	TLabel *Label1;
+	TLabel *CountryNote;
+	TLabel *CountryLabel;
+	TCheckBox *AutorunBox;
+	TCheckBox *MinimizeBox;
 	void __fastcall SaveButtonClick(TObject *Sender);
+	void __fastcall FormShow(TObject *Sender);
 private:	// User declarations
 public:		// User declarations
     String SelectDomain(int index);
