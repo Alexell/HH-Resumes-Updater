@@ -4,8 +4,8 @@ object SettingsForm: TSettingsForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
-  ClientHeight = 178
-  ClientWidth = 336
+  ClientHeight = 177
+  ClientWidth = 332
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

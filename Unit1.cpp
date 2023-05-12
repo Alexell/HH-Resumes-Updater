@@ -32,13 +32,13 @@ void TMainForm::OneStart(bool minimized)
     MainForm->Position = poScreenCenter;
 
 	StatusBar->SimpleText = "Статус: открываю hh.ru ...";
-	Navigate(Domain+"locale?language=RU");
+	Navigate(Domain + "locale?language=RU");
 	StartTimer->Enabled = true;
 	HelpLabel->Caption = "Авторизуйтесь на сайте в этом браузере, после чего программа начнет работу.";
 	StatusBar->SimpleText = "Статус: проверяю авторизацию ...";
 	if (minimized == true) {
 		Application->Minimize();
-		ShowWindow(Handle,SW_HIDE);
+		ShowWindow(Handle, SW_HIDE);
 		Tray->Visible = true;
 	}
 }
@@ -46,19 +46,17 @@ void TMainForm::OneStart(bool minimized)
 
 void TMainForm::Navigate(String URL)
 {
-	try
-	{
+	try {
 		Web->Navigate(WideString(URL).c_bstr());
 	}
-	catch(...){}
+	catch(...) {}
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TMainForm::StartTimerTimer(TObject *Sender)
 {
 	Web->ExecuteScript("function check_auth() { let link = document.querySelectorAll('.supernova-link'); link = Array.from( link ).filter( e => (/Мои резюме/i).test( e.textContent ) ); return(link.length); } check_auth();");
-	if(Web->LocationURL.Pos("login"))
-	{
+	if(Web->LocationURL.Pos("login")) {
 		StatusBar->SimpleText = "Статус: жду авторизации пользователя ...";
 	}
 }
@@ -67,29 +65,25 @@ void __fastcall TMainForm::StartTimerTimer(TObject *Sender)
 void __fastcall TMainForm::MainTimerTimer(TObject *Sender)
 {
 	// переход в "Мои резюме"
-	if(Step == 0)
-	{
-		Navigate(Domain+"applicant/resumes");
+	if(Step == 0) {
+		Navigate(Domain + "applicant/resumes");
 		Step = 1;
 		return;
 	}
 
 	// проверка авторизации
-	if(Step == 1)
-	{
+	if(Step == 1) {
 		Web->ExecuteScript("function check_auth() { let link = document.querySelectorAll('.supernova-link'); link = Array.from( link ).filter( e => (/Мои резюме/i).test( e.textContent ) ); return(link.length); } check_auth();");
 		return;
 	}
 
-	if(Step == 2)
-	{
+	if(Step == 2) {
 		//Считаем кол-во доступных резюме для поднятия
 		Web->ExecuteScript("function check_resumes_col() { let link = document.querySelectorAll('.bloko-link'); link = Array.from( link ).filter( e => (/Поднять в поиске/i).test( e.textContent ) ); return(link.length); } check_resumes_col();");
 		return;
 	}
 
-	if(Step == 3)
-	{
+	if(Step == 3) {
 		// поднимаем резюме в поиске
 		StatusBar->SimpleText = "Статус: поднимаю резюме в поиске.";
 		Web->ExecuteScript("function update_resumes() { let link = document.querySelectorAll('.bloko-link'); link = Array.from( link ).filter( e => (/Поднять в поиске/i).test( e.textContent ) ); link.forEach((el) => { el.click(); }); } update_resumes();");
@@ -108,23 +102,22 @@ void __fastcall TMainForm::LongTimerTimer(TObject *Sender)
 
 void TMainForm::ClearMemory()
 {
-	try
-	{
+	try {
 		THandle MainHandle;
 		HANDLE ProcessHandle, ThreadHandle;
 		DWORD ProcessID = GetCurrentProcessId();
-		ProcessHandle = OpenProcess(PROCESS_ALL_ACCESS,false,ProcessID);
+		ProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, false, ProcessID);
 		SetProcessWorkingSetSize(ProcessHandle, DWORD(-1), DWORD(-1));
 		CloseHandle(ProcessHandle);
 	}
-    catch(...){}
+    catch(...) {}
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TMainForm::ApplicationEventsMinimize(TObject *Sender)
 {
 	Application->Minimize();
-	ShowWindow(Handle,SW_HIDE);
+	ShowWindow(Handle, SW_HIDE);
 	Tray->Visible = true;
 }
 //---------------------------------------------------------------------------
@@ -133,7 +126,7 @@ void __fastcall TMainForm::TrayClick(TObject *Sender)
 {
 	Tray->Visible = false;
 	Application->Restore();
-	ShowWindow(Handle,SW_SHOW);
+	ShowWindow(Handle, SW_SHOW);
 	MainForm->FormStyle = fsStayOnTop;
 	MainForm->FormStyle = fsNormal;
 }
@@ -201,7 +194,7 @@ void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT 
 
 		if (Step == 2) {
 			if (StrToInt(AResultObjectAsJson) > 0) {
-				StatusBar->SimpleText = "Статус: могу поднять "+AResultObjectAsJson+" резюме.";
+				StatusBar->SimpleText = "Статус: могу поднять " + AResultObjectAsJson + " резюме.";
 				Step = 3;
 				return;
 			}
@@ -218,7 +211,7 @@ void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT 
 
 		if (Step == 3) {
 			LastTime = Now().FormatString("hh:nn");
-			StatusBar->SimpleText = "Статус: резюме подняты в "+LastTime+". Ожидаем ...";
+			StatusBar->SimpleText = "Статус: резюме подняты в " + LastTime + ". Ожидаем ...";
 			MainTimer->Enabled = false;
 			Step = 0;
 			HideWeb();
