@@ -13,6 +13,7 @@ object SettingsForm: TSettingsForm
   Font.Name = 'Tahoma'
   Font.Style = []
   Position = poScreenCenter
+  OnClose = FormClose
   OnShow = FormShow
   TextHeight = 13
   object CountryNote: TLabel

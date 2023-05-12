@@ -19,6 +19,7 @@ __published:	// IDE-managed Components
 	TCheckBox *MinimizeBox;
 	void __fastcall SaveButtonClick(TObject *Sender);
 	void __fastcall FormShow(TObject *Sender);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
 private:	// User declarations
 public:		// User declarations
     String SelectDomain(int index);

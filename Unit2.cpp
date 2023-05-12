@@ -85,3 +85,11 @@ void __fastcall TSettingsForm::FormShow(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TSettingsForm::FormClose(TObject *Sender, TCloseAction &Action)
+{
+	if (Settings->ReadBool("Main", "Started", false) == false) {
+        Application->Terminate();
+	}
+}
+//---------------------------------------------------------------------------
+
