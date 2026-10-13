@@ -13,6 +13,7 @@
 TMainForm *MainForm;
 
 int Step = 0;
+ULONGLONG ButtonScanStarted = 0;
 int ResumesLeft = 0;
 String LastTime = "";
 //---------------------------------------------------------------------------
@@ -80,20 +81,37 @@ void __fastcall TMainForm::MainTimerTimer(TObject *Sender)
 
 	// переход в "Мои резюме"
 	if (Step == 2) {
-		Navigate(Domain + "/applicant/resumes?hhtmFrom=main&hhtmFromLabel=header");
+		Navigate(Domain + "/applicant/my_resumes?hhtmFrom=profile");
 		Step = 3;
+        ButtonScanStarted = GetTickCount64();
 		return;
 	}
 
 	if (Step == 3) {
 		// считаем кол-во доступных резюме для поднятия
-		Web->ExecuteScript(R"(
-			(function() {
-				const buttons = document.querySelectorAll('button');
-				const matches = Array.from(buttons).filter(btn => (/Поднять в поиске/i).test(btn.textContent));
-				return matches.length;
-			})();
-		)");
+		MainTimer->Enabled = false;
+        Web->ExecuteScript(R"HH(
+(function() {
+
+function candidates() {
+    return Array.from(document.querySelectorAll('button[data-qa~="resume-update-button"]'))
+        .filter(b => !b.disabled && b.getAttribute('aria-disabled') !== 'true');
+}
+function resumeKey(b) {
+    for (let p = b.parentElement; p && p !== document.body; p = p.parentElement) {
+        const links = p.querySelectorAll('[data-qa^="resume-card-link-"]');
+        if (links.length === 1) return links[0].getAttribute('data-qa');
+        if (links.length > 1) break;
+    }
+    return null;
+}
+
+if (!/^\/applicant\/my_resumes\/?$/.test(location.pathname)) return -2;
+const matches = candidates();
+if (matches.length) window.__hhClickedResumeKeys = new Set();
+return matches.length;
+})();
+)HH");
 
 		return;
 	}
@@ -102,25 +120,45 @@ void __fastcall TMainForm::MainTimerTimer(TObject *Sender)
 		// поднимаем резюме в поиске
 		StatusBar->SimpleText = "Статус: поднимаю резюме в поиске (осталось " + IntToStr(ResumesLeft) + ").";
 
-		Web->ExecuteScript(R"(
-			(function() {
-				const btn = Array.from(document.querySelectorAll('button'))
-					.find(b => /Поднять в поиске/i.test(b.textContent));
+		MainTimer->Enabled = false;
+        Web->ExecuteScript(R"HH(
+(function() {
 
-				if (btn) {
-					btn.click();
+function candidates() {
+    return Array.from(document.querySelectorAll('button[data-qa~="resume-update-button"]'))
+        .filter(b => !b.disabled && b.getAttribute('aria-disabled') !== 'true');
+}
+function resumeKey(b) {
+    for (let p = b.parentElement; p && p !== document.body; p = p.parentElement) {
+        const links = p.querySelectorAll('[data-qa^="resume-card-link-"]');
+        if (links.length === 1) return links[0].getAttribute('data-qa');
+        if (links.length > 1) break;
+    }
+    return null;
+}
 
-					setTimeout(() => {
-						const closeBtn = document.querySelector('button[data-qa="bot-update-resume-modal__close-button"]');
-						if (closeBtn) {
-							closeBtn.click();
-						}
-					}, 700);
-					return 1;
-				}
-				return 0;
-			})();
-		)");
+const seen = window.__hhClickedResumeKeys || (window.__hhClickedResumeKeys = new Set());
+const close = document.querySelector('button[data-qa="bot-update-resume-modal__close-button"]');
+if (close && close.getClientRects().length && !close.disabled) {
+    close.click();
+    return 0;
+}
+const btn = candidates().find(b => {
+    const id = resumeKey(b);
+    return id ? !seen.has(id) : b.dataset.hhUpdaterClicked !== '1';
+});
+if (!btn) return -1;
+const id = resumeKey(btn);
+if (id) seen.add(id);
+btn.dataset.hhUpdaterClicked = '1';
+btn.click();
+setTimeout(() => {
+    const b = document.querySelector('button[data-qa="bot-update-resume-modal__close-button"]');
+    if (b && !b.disabled) b.click();
+}, 700);
+return 1;
+})();
+)HH");
 
 		return;
 	}
@@ -187,6 +225,11 @@ void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT 
 	try {
 		result = StrToInt(AResultObjectAsJson);
 	} catch (...) {
+        if (Step == 3 || Step == 4) {
+            StatusBar->SimpleText = "Статус: ошибка скрипта кнопок. Ожидаем...";
+            Step = 1;
+            LongTimer->Enabled = true;
+        }
 		return;
 	}
 
@@ -206,36 +249,42 @@ void __fastcall TMainForm::WebExecuteScript(TCustomEdgeBrowser *Sender, HRESULT 
 	}
 
 	if (Step == 3) {
-		ResumesLeft = result;
-		if (ResumesLeft > 0) {
-			StatusBar->SimpleText = "Статус: могу поднять " + AResultObjectAsJson + " резюме.";
-			Step = 4;
-		} else {
-			StatusBar->SimpleText = "Статус: поднятие недоступно. Ожидаем...";
-			MainTimer->Enabled = false;
-			Step = 1;
-			ClearMemory();
-			LongTimer->Enabled = true;
-		}
-		return;
-	}
-
-	if (Step == 4) {
-		if (result > 0) {
-			ResumesLeft--;
-		}
-
-		StatusBar->SimpleText = "Статус: поднимаю резюме в поиске (осталось " + IntToStr(ResumesLeft) + ").";
-
-		if (ResumesLeft == 0) {
-			MainTimer->Enabled = false;
-			Step = 5;
-		}
-	}
+        ResumesLeft = result;
+        if (result > 0) {
+            StatusBar->SimpleText = "Статус: найдено доступных кнопок: " + IntToStr(result) + ".";
+            Step = 4;
+            MainTimer->Enabled = true;
+        } else if (GetTickCount64() - ButtonScanStarted < 30000) {
+            StatusBar->SimpleText = "Статус: ожидаю страницу всех резюме и кнопки (до 30 секунд)...";
+            MainTimer->Enabled = true;
+        } else {
+            StatusBar->SimpleText = "Статус: страница всех резюме или её кнопки не найдены за 30 секунд. Ожидаем...";
+            MainTimer->Enabled = false;
+            Step = 1;
+            ClearMemory();
+            LongTimer->Enabled = true;
+        }
+        return;
+    }
+    if (Step == 4) {
+        if (result < 0) {
+            MainTimer->Enabled = false;
+            StatusBar->SimpleText = "Статус: необработанных доступных кнопок больше нет. Проверьте результат на сайте.";
+            Step = 1;
+            LongTimer->Enabled = true;
+            return;
+        }
+        if (result > 0 && ResumesLeft > 0) --ResumesLeft;
+        StatusBar->SimpleText = "Статус: отправляю нажатия (осталось " + IntToStr(ResumesLeft) + ").";
+        if (ResumesLeft <= 0) {
+            MainTimer->Enabled = false;
+            Step = 5;
+        } else MainTimer->Enabled = true;
+    }
 
 	if (Step == 5) {
 		LastTime = Now().FormatString("hh:nn");
-		StatusBar->SimpleText = "Статус: резюме подняты в " + LastTime + ". Ожидаем...";
+		StatusBar->SimpleText = "Статус: нажатия отправлены в " + LastTime + ". Ожидаем...";
 		Step = 1;
 		ClearMemory();
 		LongTimer->Enabled = true;
